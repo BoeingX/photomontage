@@ -1,19 +1,43 @@
 #include "photomontage.hpp"
+#include <cmath>
 using namespace std;
 using namespace cv;
-Mat read(string filename){
+Mat read(char *filename){
     return imread(filename);
 }
 
-void write(const Mat &img, string filename){
+void write(const Mat &img, char *filename){
     imwrite(filename, img);
 }
 
-void closure(Mat &img, const Mat &H){
-
+void closure(const Mat &img, const Mat &H, int &minX, int &maxX, int &minY, int &maxY){
+    Mat H_inv;
+    invert(H, H_inv);
+    Mat xs(img.rows, img.cols, CV_32FC1);
+    Mat ys(img.rows, img.cols, CV_32FC1);
+    for(int i = 0; i < img.rows; i++){
+        for(int j = 0; j < img.cols; j++){
+            ys.at<float>(i,j) = (H_inv.at<float>(0,0)*j + H_inv.at<float>(0,1)*i + H_inv.at<float>(0,2)) / (H_inv.at<float>(2,0)*j + H_inv.at<float>(2,1)*i + H_inv.at<float>(2,2));
+            xs.at<float>(i,j) = (H_inv.at<float>(1,0)*j + H_inv.at<float>(1,1)*i + H_inv.at<float>(1,2)) / (H_inv.at<float>(2,0)*j + H_inv.at<float>(2,1)*i + H_inv.at<float>(2,2));
+        }
+    }
+    /*
+    cout<<xs.at<float>(0,0)<<","<<ys.at<float>(0,0)<<endl;
+    cout<<xs.at<float>(0,img.cols)<<","<<ys.at<float>(0,img.cols)<<endl;
+    cout<<xs.at<float>(img.rows,0)<<","<<ys.at<float>(img.rows,0)<<endl;
+    cout<<xs.at<float>(img.rows, img.cols)<<","<<ys.at<float>(img.rows, img.cols)<<endl;
+    */
+    double minX_, maxX_, minY_, maxY_;
+    Point minLoc, maxLoc;
+    minMaxLoc(xs, &minX_, &maxX_, &minLoc, &maxLoc, Mat());
+    minMaxLoc(ys, &minY_, &maxY_, &minLoc, &maxLoc, Mat());
+    minX = (int)(floor(minX_));
+    maxX = (int)(ceil(maxX_));
+    minY = (int)(floor(minY_));
+    maxY = (int)(ceil(maxY_));
 }
 
-void homography(Mat &img1, Mat &img2){
+Mat homography(const Mat &img1, const Mat &img2){
     const float inlier_threshold = 2.5f;
     const float nn_match_ratio = 0.8f;
     //! Points AKAZE and their descriptors
@@ -95,6 +119,22 @@ void homography(Mat &img1, Mat &img2){
     for(int i = 0; i < 3; i++)
         for(int j = 0; j < 3; j++)
             H.at<float>(i,j) = h.at<float>(i*3+j, 0);
-    
-    closure(img2, H); 
+    return H;
+}
+Mat glue(const Mat &img1, const Mat &img2){
+    Mat H = homography(img1, img2);
+    int minX, maxX, minY, maxY;    
+    closure(img2, H, minX, maxX, minY, maxY); 
+    Mat tmp1, tmp2; 
+    copyMakeBorder(img1, tmp1, 0, 0, 0, img1.cols, BORDER_CONSTANT, 0);
+    warpPerspective(img2, tmp2, H, Size(img1.cols, img1.rows), WARP_INVERSE_MAP) ;
+    imshow("img1", tmp1);
+    imshow("img2", tmp2);
+    waitKey();
+
+    Mat img = tmp1 + (tmp2 - tmp1);
+    imshow("img1+img2", img);
+    waitKey();
+ 
+    return H;
 }

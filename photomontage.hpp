@@ -7,7 +7,8 @@
 #include <vector>
 using namespace std;
 using namespace cv;
-Mat read(string filename);
-void write(const Mat &img, string filename);
-void closure(Mat &img, const Mat &H);
-void homography(Mat &img1, Mat &img2);
+Mat read(char *filename);
+void write(const Mat &img, char *filename);
+void closure(const Mat &img, const Mat &H, int &minX, int &maxX, int &minY, int &maxY);
+Mat homography(const Mat &img1, const Mat &img2);
+Mat glue(const Mat &img1, const Mat &img2);
