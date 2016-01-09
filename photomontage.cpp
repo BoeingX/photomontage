@@ -174,7 +174,7 @@ int bestOffset(const Mat &img1, const Mat &img2, const float minPortionH, const 
        xOpt = x;
        yOpt = -y;
     }
-    return 0;
+    return yOpt*img1.cols + xOpt;
 }
 
 void bestOffsetTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, const float minPortionH, const float minPortionV){
