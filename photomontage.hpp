@@ -12,5 +12,5 @@ void write(const Mat &img, char *filename);
 void closure(const Mat &img, const Mat &H, int &minX, int &maxX, int &minY, int &maxY);
 Mat homography(const Mat &img1, const Mat &img2);
 Mat glue(const Mat &img1, const Mat &img2);
-int bestOffset(const Mat &img1, const Mat &img2, const float minPortionH = 0.f, const float minPortionV = 0.f);
+pair<int, int> bestOffset(const Mat &img1, const Mat &img2, const float minPortionH = 0.f, const float minPortionV = 0.f);
 void bestOffsetTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, const float minPortionH = 0.f, const float minPortionV = 0.f);

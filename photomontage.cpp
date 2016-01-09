@@ -141,7 +141,7 @@ Mat glue(const Mat &img1, const Mat &img2){
     return H;
 }
 
-int bestOffset(const Mat &img1, const Mat &img2, const float minPortionH, const float minPortionV){
+pair<int, int> bestOffset(const Mat &img1, const Mat &img2, const float minPortionH, const float minPortionV){
     int xOpt, yOpt, x, y;
     double scoreOpt, score;
     scoreOpt = numeric_limits<double>::max();
@@ -174,7 +174,7 @@ int bestOffset(const Mat &img1, const Mat &img2, const float minPortionH, const 
        xOpt = x;
        yOpt = -y;
     }
-    return yOpt*img1.cols + xOpt;
+    return make_pair<int, int>(xOpt, yOpt);
 }
 
 void bestOffsetTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, const float minPortionH, const float minPortionV){
