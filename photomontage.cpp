@@ -1,9 +1,11 @@
 #include "photomontage.hpp"
 #include <cmath>
+#include <limits>
 using namespace std;
 using namespace cv;
 Mat read(char *filename){
-    return imread(filename);
+    Mat img = imread(filename);
+    return img;
 }
 
 void write(const Mat &img, char *filename){
@@ -137,4 +139,76 @@ Mat glue(const Mat &img1, const Mat &img2){
     waitKey();
  
     return H;
+}
+
+int bestOffset(const Mat &img1, const Mat &img2, const float minPortionH, const float minPortionV){
+    int xOpt, yOpt, x, y;
+    double scoreOpt, score;
+    scoreOpt = numeric_limits<double>::max();
+    //! case 1
+    bestOffsetTry(img1, img2, x, y, score, minPortionH, minPortionV); 
+    if(score < scoreOpt){
+        xOpt = x;
+        yOpt = y;
+        scoreOpt = score;
+    }
+    //! case 2
+    bestOffsetTry(img2, img1, x, y, score, minPortionH, minPortionV);
+    if(score < scoreOpt){
+        xOpt = -x;
+        yOpt = -y;
+        scoreOpt = score;
+    }
+    Mat img1Flip, img2Flip;
+    flip(img1, img1Flip, 1);
+    flip(img2, img2Flip, 1);
+    //! case 3
+    bestOffsetTry(img1Flip, img2Flip, x, y, score, minPortionH, minPortionV);
+    if(score < scoreOpt){
+        xOpt = -x;
+        yOpt = y;
+    }
+    //! case 4
+    bestOffsetTry(img2Flip, img1Flip, x, y, score, minPortionH, minPortionV);
+    if(score < scoreOpt){
+       xOpt = x;
+       yOpt = -y;
+    }
+    return 0;
+}
+
+void bestOffsetTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, const float minPortionH, const float minPortionV){
+    Mat img1Gray, img2Gray;
+    cvtColor(img1, img1Gray, CV_BGR2GRAY);
+    cvtColor(img2, img2Gray, CV_BGR2GRAY);
+    img1Gray.convertTo(img1Gray, CV_32F);
+    img2Gray.convertTo(img2Gray, CV_32F);
+    Mat img1Sum, img2Sum, img1Sum2, img2Sum2;
+    integral(img1Gray, img1Sum, img1Sum2); 
+    integral(img2Gray, img2Sum, img2Sum2); 
+    Mat correlation;
+    filter2D(img1Gray, correlation, CV_64FC1, img2Gray, Point(0, 0), 0, BORDER_CONSTANT); 
+    Mat tmp(img1.rows, img1.cols, CV_64FC1);
+    score = numeric_limits<double>::max();
+    float thresholdV = (1.0f - minPortionV)*img1.rows;
+    float thresholdH = (1.0f - minPortionH)*img1.cols;
+    for(int i = 0; i < img1.rows; i++){
+        for(int j = 0; j < img1.cols; j++){
+            if(i > thresholdV && j > thresholdH)
+                continue;
+            int s = i + img2.rows > img1.rows ? img1.rows : i + img2.rows;
+            int t = j + img2.cols > img1.cols ? img1.cols : j + img2.cols;
+            double A = img1Sum2.at<double>(s, t) - img1Sum2.at<double>(i, t) - img1Sum2.at<double>(s, j) + img1Sum2.at<double>(i, j);
+            s = img2.rows + i > img1.rows ? img1.rows - i : img2.rows;
+            t = img2.cols + j > img1.cols ? img1.cols - j : img2.cols;
+            double B = img2Sum2.at<double>(s, t) - img2Sum2.at<double>(0, t) - img2Sum2.at<double>(s, 0) + img2Sum2.at<double>(0, 0);
+            double C = A + B - 2.0 * correlation.at<double>(i, j);
+            C /= (img1.rows - i)*(img1.cols - j);
+            if(C < score){
+                x = j;
+                y = i;
+                score = C;
+            }
+        }
+    }
 }
