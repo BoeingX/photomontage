@@ -8,9 +8,8 @@ using namespace cv;
 #define SCREEN_HEIGHT 768
 
 int main(int argc, char **argv){
-    /*
-    Mat img1 = read(argv[1]);
-    Mat img2 = read(argv[2]);
+    Mat img1 = imread(argv[1]);
+    Mat img2 = imread(argv[2]);
     namedWindow( "img1", WINDOW_NORMAL);
     resizeWindow("img1", SCREEN_WIDTH, SCREEN_HEIGHT);
     imshow("img1", img1);
@@ -25,24 +24,16 @@ int main(int argc, char **argv){
     resizeWindow("img2calib", SCREEN_WIDTH, SCREEN_HEIGHT);
     imshow("img2calib", img2calib);
     waitKey();
-    pair<int, int> p = offset(img1, img2, hist, PANORAMA);
-    showNaive(img1, img2calib, p);
-    */
 
-	Mat img1, img2, grad, gi, ge;
-	Mat I=imread("fishes.jpg"); //CV_8UC3;
-	//setMouseCallback("I", onMouse1, &I);
-	gradient(I, img1, img2, grad);
-	imshow("I1", img1); 
-	imshow("I2", img2);
-	Point2i offset(30, -30);
-	//Point2i pt1, pt2;
-	//correspondance(Point2i(90, 90), pt1, pt2, offset, img1, img2);
-	//cout << pt1 << endl; cout << pt2 << endl;
-	Mat output =  synthesis(img1, img2, offset);
-	imshow("Output", output);
+    pair<int, int> p = offset(img1, img2calib, hist, PANORAMA);
+    cout<<p.first<<","<<p.second<<endl;
+    //showNaive(img1, img2calib, p);
+
+	Mat output =  synthesis(img1, img2calib, Point2i(p.first, p.second));
+    namedWindow( "output", WINDOW_NORMAL);
+    resizeWindow("output", SCREEN_WIDTH, SCREEN_HEIGHT);
+	imshow("output", output);
 	waitKey();
-	return 0;
 
-    return 0;
+	return 0;
 }

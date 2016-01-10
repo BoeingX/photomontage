@@ -286,6 +286,7 @@ void graphCut(Mat& output, const Mat& img1, const Mat& img2, const Point2i& offs
 // synthesize images using graph cuts;
 Mat synthesis(const Mat& img1, const Mat& img2, const Point2i& offset){
 	Mat output;
+	/*
 	if (offset.y>=0){
 		output = Mat::zeros(offset.y + img2.rows, img2.cols + offset.x, CV_8UC3);
 		for (int i = 0; i < img1.rows; i++){
@@ -310,6 +311,22 @@ Mat synthesis(const Mat& img1, const Mat& img2, const Point2i& offset){
 			for (int j = offset.x; j < offset.x + img2.cols; j++){
 				output.at<Vec3b>(i, j) = img2.at<Vec3b>(i, j - offset.x);
 			}
+		}
+	}*/
+	if(offset.x > 0){
+		if(offset.y < 0){
+			int height = abs(offset.y) + img1.rows > img2.rows ? abs(offset.y) + img1.rows : img2.rows;
+			int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
+			output = Mat::zeros(height, width, CV_8UC(img1.channels()));
+			img1.copyTo(output(Rect(0, -offset.y, img1.cols, img1.rows)));
+			img2.copyTo(output(Rect(offset.x, 0, img2.cols, img2.rows)));
+		}
+		else if(offset.y > 0){
+			int height = abs(offset.y) + img2.rows > img1.rows ? abs(offset.y) + img2.rows : img1.rows;
+			int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
+			output = Mat::zeros(height, width, CV_8UC(img1.channels()));
+			img1.copyTo(output(Rect(0, 0, img1.cols, img1.rows)));
+			img2.copyTo(output(Rect(offset.x, offset.y, img2.cols, img2.rows)));
 		}
 	}
 	graphCut(output, img1, img2, offset);

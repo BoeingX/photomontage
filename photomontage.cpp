@@ -5,14 +5,6 @@
 #define PANORAMA 1
 using namespace std;
 using namespace cv;
-Mat read(char *filename){
-    Mat img = imread(filename);
-    return img;
-}
-
-void write(const Mat &img, char *filename){
-    imwrite(filename, img);
-}
 
 void closure(const vector<Point2f> &pts, Point2f &ul, Point2f &lr){
     float minX, minY, maxX, maxY;
@@ -187,7 +179,6 @@ void showNaive(const Mat &img1, const Mat &img2, const pair<int, int> offset){
     namedWindow("output", WINDOW_NORMAL);
     resizeWindow("output", 1024, 768);
     imshow("output", tmp1 + (tmp2 - tmp1));
-    imwrite("output.jpg", tmp1 + (tmp2 - tmp1));
     waitKey();
 }
 

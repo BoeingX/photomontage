@@ -11,11 +11,8 @@
 using namespace std;
 using namespace cv;
 
-Mat read(char *filename);
-void write(const Mat &img, char *filename);
 
 void showNaive(const Mat &img1, const Mat &img2, const pair<int, int> offset);
-void show(const Mat &img1, const Mat &img2, const Point2f &ul, const Point2f &lr);
 
 pair<int, int> offset(const Mat &img1, const Mat &img2, set<Point2f> &hist, const int method);
 
