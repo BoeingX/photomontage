@@ -184,7 +184,10 @@ void showNaive(const Mat &img1, const Mat &img2, const pair<int, int> offset){
             img2.copyTo(tmp2(Rect(offset.first, offset.second, img2.cols, img2.rows)));
         }
     }
+    namedWindow("output", WINDOW_NORMAL);
+    resizeWindow("output", 1024, 768);
     imshow("output", tmp1 + (tmp2 - tmp1));
+    imwrite("output.jpg", tmp1 + (tmp2 - tmp1));
     waitKey();
 }
 
