@@ -3,6 +3,7 @@
 #include <limits>
 #define SIGGRAPH 0
 #define PANORAMA 1
+#define MIN_OVERLAP 0.1
 using namespace std;
 using namespace cv;
 
@@ -30,7 +31,7 @@ pair<int, int> offset(const Mat &img1, const Mat &img2, set<Point2f> &hist, cons
     if(method == PANORAMA)
         return homoMatching(img1, img2);
     else if(method == SIGGRAPH)
-        return entirePatchMatching(img1, img2, hist);
+        return entirePatchMatching(img1, img2, hist, MIN_OVERLAP, MIN_OVERLAP);
 }
 Mat homography(const Mat &img1, const Mat &img2){
     const float inlier_threshold = 2.5f;
@@ -215,6 +216,8 @@ pair<int, int> entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f
        xOpt = x;
        yOpt = -y;
     }
+    
+    cout<<xOpt<<","<<yOpt<<","<<scoreOpt<<endl;
     return make_pair<int, int>(xOpt, yOpt);
 }
 
@@ -231,11 +234,11 @@ void entirePatchMatchingTry(const Mat &img1, const Mat &img2, int &x, int &y, do
     Mat correlation;
     filter2D(img1Gray, correlation, CV_64FC1, img2Gray, Point(0, 0), 0, BORDER_CONSTANT); 
     score = numeric_limits<double>::max();
-    float thresholdV = (1.0f - minPortionV)*img1.rows;
-    float thresholdH = (1.0f - minPortionH)*img1.cols;
     for(int i = 0; i < img1.rows; i++){
         for(int j = 0; j < img1.cols; j++){
-            if(i > thresholdV && j > thresholdH)
+            float overlapH = j + img2.cols > img1.cols ? (img1.cols - j) / (float) img1.cols : img2.cols / (float) img1.cols;
+            float overlapV = i + img2.rows > img1.rows ? (img1.rows - i) / (float) img1.rows : img2.rows / (float) img1.rows;
+            if(overlapH < MIN_OVERLAP || overlapV < MIN_OVERLAP)
                 continue;
             int s = i + img2.rows > img1.rows ? img1.rows : i + img2.rows;
             int t = j + img2.cols > img1.cols ? img1.cols : j + img2.cols;

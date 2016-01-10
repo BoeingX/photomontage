@@ -19,7 +19,7 @@ int main(int argc, char **argv){
     waitKey();
 
     set<Point2f> hist;
-    Mat img2calib = calibration(img1, img2);
+    /*Mat img2calib = calibration(img1, img2);
     namedWindow( "img2calib", WINDOW_NORMAL);
     resizeWindow("img2calib", SCREEN_WIDTH, SCREEN_HEIGHT);
     imshow("img2calib", img2calib);
@@ -29,11 +29,20 @@ int main(int argc, char **argv){
     cout<<p.first<<","<<p.second<<endl;
     //showNaive(img1, img2calib, p);
 
+
 	Mat output =  synthesis(img1, img2calib, Point2i(p.first, p.second));
     namedWindow( "output", WINDOW_NORMAL);
     resizeWindow("output", SCREEN_WIDTH, SCREEN_HEIGHT);
 	imshow("output", output);
 	waitKey();
-
+    imwrite("output.jpg", output);
+    */
+    pair<int, int> p = offset(img1, img2, hist, SIGGRAPH);
+    showNaive(img1, img2, p);
+    Mat output = synthesis(img1, img2, Point2i(p.first, p.second));
+    namedWindow( "output", WINDOW_NORMAL);
+    resizeWindow("output", SCREEN_WIDTH, SCREEN_HEIGHT);
+	imshow("output", output);
+	waitKey();
 	return 0;
 }
