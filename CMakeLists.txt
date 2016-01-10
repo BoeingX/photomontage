@@ -10,6 +10,6 @@ FIND_PACKAGE(OpenCV REQUIRED)
 
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
-ADD_EXECUTABLE(main main.cpp photomontage.cpp photomontage.hpp maxflow/graph.cpp)
+ADD_EXECUTABLE(main main.cpp graphCuts.cpp photomontage.cpp  maxflow/graph.cpp)
 
 TARGET_LINK_LIBRARIES(main ${OpenCV_LIBS})

@@ -316,6 +316,7 @@ Mat synthesis(const Mat& img1, const Mat& img2, const Point2i& offset){
 	return output;
 }
 
+/*
 int main() {
 	//testGCuts();
 	Mat img1, img2, grad, gi, ge;
@@ -333,3 +334,4 @@ int main() {
 	waitKey();
 	return 0;
 }
+*/
