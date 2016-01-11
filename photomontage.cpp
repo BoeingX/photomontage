@@ -5,16 +5,18 @@
 #define SIGGRAPH 0
 #define PANORAMA 1
 #define MIN_OVERLAP 0.1
-using namespace std;
-using namespace cv;
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 768
+#define INLINER_THRESHOLD 2.5
+#define  NN_MATCH_RATIO  0.8
+using namespace std;
+using namespace cv;
 
-void display(const char *name, Mat img){
+void display(const char *name, Mat img, int showTime){
     namedWindow(name, WINDOW_NORMAL);
     resizeWindow(name, SCREEN_WIDTH, SCREEN_HEIGHT);
     imshow(name, img);
-    waitKey();
+    waitKey(showTime);
 }
 void closure(const vector<Point2f> &pts, Point2f &ul, Point2f &lr){
     float minX, minY, maxX, maxY;
@@ -40,11 +42,11 @@ Point2i offset(const Mat &img1, const Mat &img2, set<Point2f> &hist, const int m
     if(method == PANORAMA)
         return homoMatching(img1, img2);
     else if(method == SIGGRAPH)
-        return entirePatchMatching(img1, img2, hist, MIN_OVERLAP, MIN_OVERLAP);
+        return entirePatchMatching(img1, img2, hist);
 }
+
 Mat homography(const Mat &img1, const Mat &img2){
-    const float inlier_threshold = 2.5f;
-    const float nn_match_ratio = 0.8f;
+
     //! Points AKAZE and their descriptors
     vector<KeyPoint> kpts1, kpts2;
     Mat desc1, desc2;
@@ -63,7 +65,7 @@ Mat homography(const Mat &img1, const Mat &img2){
         DMatch x = nn_matches[i][0];
         float dist1 = nn_matches[i][0].distance;
         float dist2 = nn_matches[i][1].distance;
-        if(dist1 < nn_match_ratio * dist2) {
+        if(dist1 < NN_MATCH_RATIO * dist2) {
             matched1.push_back(kpts1[x.queryIdx]);
             matched2.push_back(kpts2[x.trainIdx]);
         }
@@ -87,7 +89,7 @@ Mat homography(const Mat &img1, const Mat &img2){
         float dist = sqrt( pow(col.at<double>(0) - matched2[i].pt.x, 2) +
                             pow(col.at<double>(1) - matched2[i].pt.y, 2));
 
-        if(dist < inlier_threshold) {
+        if(dist < INLINER_THRESHOLD) {
             int new_i = static_cast<int>(inliers1.size());
             inliers1.push_back(matched1[i]);
             inliers2.push_back(matched2[i]);
@@ -191,19 +193,19 @@ Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset){
     return output;
 }
 
-Point2i entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist, const float minPortionH, const float minPortionV){
+Point2i entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist){
     int xOpt, yOpt, x, y;
     double scoreOpt, score;
     scoreOpt = numeric_limits<double>::max();
     //! case 1
-    entirePatchMatchingTry(img1, img2, x, y, score, hist, minPortionH, minPortionV);
+    entirePatchMatchingTry(img1, img2, x, y, score, hist);
     if(score < scoreOpt){
         xOpt = x;
         yOpt = y;
         scoreOpt = score;
     }
     //! case 2
-    entirePatchMatchingTry(img2, img1, x, y, score, hist, minPortionH, minPortionV);
+    entirePatchMatchingTry(img2, img1, x, y, score, hist);
     if(score < scoreOpt){
         xOpt = -x;
         yOpt = -y;
@@ -213,13 +215,13 @@ Point2i entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist
     flip(img1, img1Flip, 1);
     flip(img2, img2Flip, 1);
     //! case 3
-    entirePatchMatchingTry(img1Flip, img2Flip, x, y, score, hist, minPortionH, minPortionV);
+    entirePatchMatchingTry(img1Flip, img2Flip, x, y, score, hist);
     if(score < scoreOpt){
         xOpt = -x;
         yOpt = y;
     }
     //! case 4
-    entirePatchMatchingTry(img2Flip, img1Flip, x, y, score, hist, minPortionH, minPortionV);
+    entirePatchMatchingTry(img2Flip, img1Flip, x, y, score, hist);
     if(score < scoreOpt){
        xOpt = x;
        yOpt = -y;
@@ -228,8 +230,7 @@ Point2i entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist
     return Point2i(xOpt, yOpt);
 }
 
-void entirePatchMatchingTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, set<Point2f> &hist, const float minPortionH,
-                            const float minPortionV){
+void entirePatchMatchingTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, set<Point2f> &hist){
     Mat img1Gray, img2Gray;
     cvtColor(img1, img1Gray, CV_BGR2GRAY);
     cvtColor(img2, img2Gray, CV_BGR2GRAY);
