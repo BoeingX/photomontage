@@ -1,13 +1,39 @@
 #include "photomontage.hpp"
 #include "graphCuts.hpp"
 #include <cstdlib>
-#include <stack>
+#include <queue>
 
 using namespace std;
 using namespace cv;
 #define SIGGRAPH 0
 #define PANORAMA 1
 
+Mat panorama_(int argc, char **argv, int left, int right){
+    if(right - left <= 1)
+        return imread(argv[left]);
+    int m = left + (right - left) / 2;
+    Mat img1 = panorama_(argc, argv, left, m);
+    //display("img1", img1);
+    Mat img2 = panorama_(argc, argv, m, right);
+    //display("img2", img2);
+    Mat img2Regu;
+    Point2i p = homoMatching(img1, img2, img2Regu);
+    img2.release();
+    //display("regulizaed", inputRegu);
+    Mat output = showNaive(img1, img2Regu, p);
+    img1.release();
+    return output;
+}
+int panorama_(int argc, char **argv){
+    if(argc < 2){
+        cout<<"Usage: ./main img1 img2 ..."<<endl;
+        return EXIT_FAILURE;
+    }
+    Mat output = panorama_(argc, argv, 1, argc);
+    display("output", output);
+    imwrite("output.jpg", output);
+    output.release();
+}
 int panorama(int argc, char **argv){
     if(argc < 2){
         cout<<"Usage: ./main img1 img2 ..."<<endl;
@@ -37,7 +63,7 @@ int panorama(int argc, char **argv){
 }
 
 int main(int argc, char **argv){
-    panorama(argc, argv);
+    panorama_(argc, argv);
     /*Mat img1 = imread(argv[1]);
     Mat img2 = imread(argv[2]);
     namedWindow( "img1", WINDOW_NORMAL);
