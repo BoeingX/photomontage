@@ -174,13 +174,17 @@ void correspondance(const Point2i& pt, Point2i& pt1, Point2i& pt2, const Point2i
 
 // construct graph;
 void graphCut(Mat& output, const Mat& img1, const Mat& img2, const Point2i& offset){
+	if (offset.x >= img1.cols || offset.y >= img1.rows || offset.y <= -1 * img2.rows){
+		cout << "Offset too great!" << endl;
+		return;
+	}
 	// define infinity;
 	double infinity = std::numeric_limits<double>::infinity();
 	Point2i pt1, pt2;
 	// compute overlap region;
 	if (offset.y >= 0){
 		const Point2i upperLeft(offset);
-		const Point2i lowerRight(img1.cols-1, img1.rows-1);
+		const Point2i lowerRight(min(img1.cols-1, offset.x+img2.cols-1), min(img1.rows-1, offset.y+img2.rows-1));
 		int cols = lowerRight.x - upperLeft.x+1, rows = lowerRight.y - upperLeft.y+1;
 		int numNodes = (lowerRight.x - upperLeft.x+1)*(lowerRight.y - upperLeft.y+1);
 		Graph<double, double, double> g(numNodes, numNodes*6);
@@ -240,7 +244,7 @@ void graphCut(Mat& output, const Mat& img1, const Mat& img2, const Point2i& offs
 	}
 	if (offset.y < 0){
 		const Point2i upperLeft(offset.x, -1*offset.y);
-		const Point2i lowerRight(img1.cols-1, img2.rows-1);
+		const Point2i lowerRight(min(img1.cols-1, offset.x+img2.cols-1), min(img2.rows-1, -1*offset.y+img1.rows-1));
 		int cols = lowerRight.x - upperLeft.x + 1, rows = lowerRight.y - upperLeft.y + 1;
 		int numNodes = (lowerRight.x - upperLeft.x+1)*(lowerRight.y - upperLeft.y+1);
 		Graph<double, double, double> g(numNodes, numNodes * 6);
@@ -355,17 +359,24 @@ Mat synthesis(const Mat& img1, const Mat& img2, const Point2i& offset){
 
 int main() {
 	//testGCuts();
-	Mat img1, img2;
-	Mat I=imread("../fishes.jpg"); //CV_8UC3;
-	//setMouseCallback("I", onMouse1, &I);
-	forTest(I, img1, img2);
+	Mat img1, img2, img3, img4, img5, output;
+	img1=imread("../image0006.jpg"); //CV_8UC3;
+	img2 = imread("../image0007.jpg");
+	img3 = imread("../image0008.jpg");
+	img4 = imread("../IMG_0026.JPG");
+	img5 = imread("../IMG_0027.JPG");
+	/*
 	imshow("I1", img1); 
 	imshow("I2", img2);
-	Point2i offset(70, -70);
-	//Point2i pt1, pt2;
-	//correspondance(Point2i(90, 90), pt1, pt2, offset, img1, img2);
-	//cout << pt1 << endl; cout << pt2 << endl;
-	Mat output =  synthesis(img1, img2, offset);
+	imshow("I3", img3);
+
+	Point2i offset1(454, -8);
+	output = synthesis(img1, img2, offset1);
+	Point2i offset2(6, -314);
+	output = synthesis(output, img3, offset2);
+	*/
+	Point2i offset(366, -9);
+	output = synthesis(img4, img5, offset);
 	imshow("Output", output);
 	waitKey();
 	return 0;
