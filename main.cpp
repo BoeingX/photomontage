@@ -1,6 +1,8 @@
 #include "photomontage.hpp"
 #include "graphCuts.hpp"
 #include <cstdlib>
+#include <stack>
+
 using namespace std;
 using namespace cv;
 #define SIGGRAPH 0
@@ -24,12 +26,10 @@ int panorama(int argc, char **argv){
             break;
         }
         display(argv[i], input);
-        Mat inputRegu = relugarization(output, input);
-        input.release();
-        display("regulizaed", inputRegu);
-        set<Point2f> hist;
-        Point2i p = offset(output, inputRegu, hist, PANORAMA);
-        output = showGraphCut(output, inputRegu, p);
+        Mat inputRegu;
+        Point2i p = homoMatching(output, input, inputRegu);
+        //display("regulizaed", inputRegu);
+        output = showNaive(output, inputRegu, p);
         inputRegu.release();
     }
     display("output", output);

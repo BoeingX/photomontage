@@ -38,12 +38,6 @@ void closure(const vector<Point2f> &pts, Point2f &ul, Point2f &lr){
     lr = Point2f(maxX, maxY);
 }
 
-Point2i offset(const Mat &img1, const Mat &img2, set<Point2f> &hist, const int method){
-    if(method == PANORAMA)
-        return homoMatching(img1, img2);
-    else if(method == SIGGRAPH)
-        return entirePatchMatching(img1, img2, hist);
-}
 
 Mat homography(const Mat &img1, const Mat &img2){
 
@@ -131,7 +125,7 @@ Mat homography(const Mat &img1, const Mat &img2){
     return H;
 }
 
-Point2i homoMatching(const Mat &img1, const Mat &img2){
+Point2i homoMatching(const Mat &img1, const Mat &img2, Mat &img2Regu){
     Mat H = homography(img1, img2);
     Mat H_inv = H.inv();
     vector<Point2f> pts(4);
@@ -143,30 +137,13 @@ Point2i homoMatching(const Mat &img1, const Mat &img2){
     perspectiveTransform(pts, dst, H_inv);
     Point2f ul, lr;
     closure(dst, ul, lr);
-    return Point2i(ul.x, ul.y);
-}
-
-Mat relugarization(const Mat &img1, const Mat &img2){
-    Mat H = homography(img1, img2);
-    Mat H_inv = H.inv();
-
-    vector<Point2f> pts(4);
-    pts[0] = Point2f(0, 0);
-    pts[1] = Point2f(0, img2.rows);
-    pts[2] = Point2f(img2.cols, 0);
-    pts[3] = Point2f(img2.cols, img2.rows);
-    vector<Point2f> dst(4);
-    perspectiveTransform(pts, dst, H_inv);
-    Point2f ul, lr;
-    closure(dst, ul, lr);
-
     Mat M;
     M = (Mat_<float>(3, 3) << 1, 0, -ul.x, 0, 1, -ul.y, 0, 0, 1);
     Mat M_ = M * H_inv;
-    Mat img2calib;
-    warpPerspective(img2, img2calib, M_, Size(lr.x - ul.x, lr.y - ul.y));
-    return img2calib;
+    warpPerspective(img2, img2Regu, M_, Size(lr.x - ul.x, lr.y - ul.y));
+    return Point2i(ul.x, ul.y);
 }
+
 
 Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset){
     Mat tmp1, tmp2;
@@ -189,7 +166,6 @@ Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset){
         }
     }
     Mat output = tmp1 + (tmp2 - tmp1);
-    waitKey();
     return output;
 }
 
