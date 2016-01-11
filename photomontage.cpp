@@ -1,12 +1,21 @@
 #include "photomontage.hpp"
 #include <cmath>
 #include <limits>
+#include <cstdlib>
 #define SIGGRAPH 0
 #define PANORAMA 1
 #define MIN_OVERLAP 0.1
 using namespace std;
 using namespace cv;
+#define SCREEN_WIDTH 1024
+#define SCREEN_HEIGHT 768
 
+void display(const char *name, Mat img){
+    namedWindow(name, WINDOW_NORMAL);
+    resizeWindow(name, SCREEN_WIDTH, SCREEN_HEIGHT);
+    imshow(name, img);
+    waitKey();
+}
 void closure(const vector<Point2f> &pts, Point2f &ul, Point2f &lr){
     float minX, minY, maxX, maxY;
     minX = numeric_limits<float>::max();
@@ -27,7 +36,7 @@ void closure(const vector<Point2f> &pts, Point2f &ul, Point2f &lr){
     lr = Point2f(maxX, maxY);
 }
 
-pair<int, int> offset(const Mat &img1, const Mat &img2, set<Point2f> &hist, const int method){
+Point2i offset(const Mat &img1, const Mat &img2, set<Point2f> &hist, const int method){
     if(method == PANORAMA)
         return homoMatching(img1, img2);
     else if(method == SIGGRAPH)
@@ -51,12 +60,12 @@ Mat homography(const Mat &img1, const Mat &img2){
     vector<KeyPoint> matched1, matched2, inliers1, inliers2;
     vector<DMatch> good_matches;
     for(size_t i = 0; i < nn_matches.size(); i++) {
-        DMatch first = nn_matches[i][0];
+        DMatch x = nn_matches[i][0];
         float dist1 = nn_matches[i][0].distance;
         float dist2 = nn_matches[i][1].distance;
         if(dist1 < nn_match_ratio * dist2) {
-            matched1.push_back(kpts1[first.queryIdx]);
-            matched2.push_back(kpts2[first.trainIdx]);
+            matched1.push_back(kpts1[x.queryIdx]);
+            matched2.push_back(kpts2[x.trainIdx]);
         }
     }
     
@@ -120,7 +129,7 @@ Mat homography(const Mat &img1, const Mat &img2){
     return H;
 }
 
-pair<int, int> homoMatching(const Mat &img1, const Mat &img2){
+Point2i homoMatching(const Mat &img1, const Mat &img2){
     Mat H = homography(img1, img2);
     Mat H_inv = H.inv();
     vector<Point2f> pts(4);
@@ -132,10 +141,10 @@ pair<int, int> homoMatching(const Mat &img1, const Mat &img2){
     perspectiveTransform(pts, dst, H_inv);
     Point2f ul, lr;
     closure(dst, ul, lr);
-    return make_pair<int, int>(ul.x, ul.y);
+    return Point2i(ul.x, ul.y);
 }
 
-Mat calibration(const Mat &img1, const Mat &img2){
+Mat relugarization(const Mat &img1, const Mat &img2){
     Mat H = homography(img1, img2);
     Mat H_inv = H.inv();
 
@@ -157,33 +166,32 @@ Mat calibration(const Mat &img1, const Mat &img2){
     return img2calib;
 }
 
-void showNaive(const Mat &img1, const Mat &img2, const pair<int, int> offset){
+Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset){
     Mat tmp1, tmp2;
-    if(offset.first > 0){
-        if(offset.second < 0){
-            int height = abs(offset.second) + img1.rows > img2.rows ? abs(offset.second) + img1.rows : img2.rows;
-            int width = abs(offset.first) + img2.cols > img1.cols ? abs(offset.first) + img2.cols : img1.cols;
+    if(offset.x > 0){
+        if(offset.y < 0){
+            int height = abs(offset.y) + img1.rows > img2.rows ? abs(offset.y) + img1.rows : img2.rows;
+            int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
             tmp1 = Mat::zeros(height, width, CV_8UC(img1.channels()));
-            img1.copyTo(tmp1(Rect(0, -offset.second, img1.cols, img1.rows)));
+            img1.copyTo(tmp1(Rect(0, -offset.y, img1.cols, img1.rows)));
             tmp2 = Mat::zeros(height, width, CV_8UC(img1.channels()));
-            img2.copyTo(tmp2(Rect(offset.first, 0, img2.cols, img2.rows)));
+            img2.copyTo(tmp2(Rect(offset.x, 0, img2.cols, img2.rows)));
         }
-        else if(offset.second > 0){
-            int height = abs(offset.second) + img2.rows > img1.rows ? abs(offset.second) + img2.rows : img1.rows;
-            int width = abs(offset.first) + img2.cols > img1.cols ? abs(offset.first) + img2.cols : img1.cols;
+        else if(offset.y > 0){
+            int height = abs(offset.y) + img2.rows > img1.rows ? abs(offset.y) + img2.rows : img1.rows;
+            int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
             tmp1 = Mat::zeros(height, width, CV_8UC(img1.channels()));
             img1.copyTo(tmp1(Rect(0, 0, img1.cols, img1.rows)));
             tmp2 = Mat::zeros(height, width, CV_8UC(img1.channels()));
-            img2.copyTo(tmp2(Rect(offset.first, offset.second, img2.cols, img2.rows)));
+            img2.copyTo(tmp2(Rect(offset.x, offset.y, img2.cols, img2.rows)));
         }
     }
-    namedWindow("output", WINDOW_NORMAL);
-    resizeWindow("output", 1024, 768);
-    imshow("output", tmp1 + (tmp2 - tmp1));
+    Mat output = tmp1 + (tmp2 - tmp1);
     waitKey();
+    return output;
 }
 
-pair<int, int> entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist, const float minPortionH, const float minPortionV){
+Point2i entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist, const float minPortionH, const float minPortionV){
     int xOpt, yOpt, x, y;
     double scoreOpt, score;
     scoreOpt = numeric_limits<double>::max();
@@ -217,8 +225,7 @@ pair<int, int> entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f
        yOpt = -y;
     }
     
-    cout<<xOpt<<","<<yOpt<<","<<scoreOpt<<endl;
-    return make_pair<int, int>(xOpt, yOpt);
+    return Point2i(xOpt, yOpt);
 }
 
 void entirePatchMatchingTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, set<Point2f> &hist, const float minPortionH,

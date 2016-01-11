@@ -4,6 +4,7 @@
 #include <fstream>
 #include <limits>
 
+#include "photomontage.hpp"
 #include "maxflow/graph.h"
 
 using namespace std;
@@ -308,55 +309,35 @@ void graphCut(Mat& output, const Mat& img1, const Mat& img2, const Point2i& offs
 }
 
 // synthesize images using graph cuts;
-Mat synthesis(const Mat& img1, const Mat& img2, const Point2i& offset){
-	Mat output;
+Mat showGraphCut(const Mat &img1, const Mat &img2, const Point2i &offset){
 	/*
-	if (offset.y>=0){
-	output = Mat::zeros(offset.y + img2.rows, img2.cols + offset.x, CV_8UC3);
-	for (int i = 0; i < img1.rows; i++){
-	for (int j = 0; j < img1.cols; j++){
-	output.at<Vec3b>(i, j) = img1.at<Vec3b>(i, j);
-	}
-	}
-	for (int i = offset.y; i < offset.y+img2.rows; i++){
-	for (int j = offset.x; j < offset.x+img2.cols; j++){
-	output.at<Vec3b>(i, j) = img2.at<Vec3b>(i-offset.y, j-offset.x);
-	}
-	}
-	}
-	else{
-	output = Mat::zeros(-1 * offset.y + img1.rows, img2.cols + offset.x, CV_8UC3);
-	for (int i = -offset.y; i < -offset.y+img1.rows; i++){
-	for (int j = 0; j < img1.cols; j++){
-	output.at<Vec3b>(i, j) = img1.at<Vec3b>(i+offset.y, j);
-	}
-	}
-	for (int i = 0; i < img2.rows; i++){
-	for (int j = offset.x; j < offset.x + img2.cols; j++){
-	output.at<Vec3b>(i, j) = img2.at<Vec3b>(i, j - offset.x);
-	}
-	}
-	}*/
+	Mat output;
 	if (offset.x > 0){
 		if (offset.y < 0){
 			int height = abs(offset.y) + img1.rows > img2.rows ? abs(offset.y) + img1.rows : img2.rows;
 			int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
-			output = Mat::zeros(height, width, CV_8UC(img1.channels()));
-			img1.copyTo(output(Rect(0, -offset.y, img1.cols, img1.rows)));
-			img2.copyTo(output(Rect(offset.x, 0, img2.cols, img2.rows)));
+			Mat tmp1 = Mat::zeros(height, width, CV_8UC(img1.channels()));
+			Mat tmp2 = Mat::zeros(height, width, CV_8UC(img1.channels()));
+			img1.copyTo(tmp1(Rect(0, -offset.y, img1.cols, img1.rows)));
+			img2.copyTo(tmp2(Rect(offset.x, 0, img2.cols, img2.rows)));
+			output = tmp1 + (tmp2 - tmp1);
 		}
 		else if (offset.y > 0){
 			int height = abs(offset.y) + img2.rows > img1.rows ? abs(offset.y) + img2.rows : img1.rows;
 			int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
-			output = Mat::zeros(height, width, CV_8UC(img1.channels()));
-			img1.copyTo(output(Rect(0, 0, img1.cols, img1.rows)));
-			img2.copyTo(output(Rect(offset.x, offset.y, img2.cols, img2.rows)));
+			Mat tmp1 = Mat::zeros(height, width, CV_8UC(img1.channels()));
+			Mat tmp2 = Mat::zeros(height, width, CV_8UC(img1.channels()));
+			img1.copyTo(tmp1(Rect(0, 0, img1.cols, img1.rows)));
+			img2.copyTo(tmp2(Rect(offset.x, offset.y, img2.cols, img2.rows)));
+			output = tmp1 + (tmp2 - tmp1);
 		}
-	}
+	}*/
+	Mat output = showNaive(img1, img2, offset);
 	graphCut(output, img1, img2, offset);
 	return output;
 }
 
+/*
 int main() {
 	//testGCuts();
 	Mat img1, img2, img3, img4, img5, output;
@@ -365,8 +346,8 @@ int main() {
 	img3 = imread("../image0008.jpg");
 	img4 = imread("../IMG_0026.JPG");
 	img5 = imread("../IMG_0027.JPG");
-	/*
-	imshow("I1", img1); 
+
+	imshow("I1", img1);
 	imshow("I2", img2);
 	imshow("I3", img3);
 
@@ -374,10 +355,11 @@ int main() {
 	output = synthesis(img1, img2, offset1);
 	Point2i offset2(6, -314);
 	output = synthesis(output, img3, offset2);
-	*/
+
 	Point2i offset(366, -9);
-	output = synthesis(img4, img5, offset);
+	output = showGraphCut(img4, img5, offset);
 	imshow("Output", output);
 	waitKey();
 	return 0;
 }
+*/

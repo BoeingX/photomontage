@@ -11,17 +11,15 @@
 using namespace std;
 using namespace cv;
 
-
-void showNaive(const Mat &img1, const Mat &img2, const pair<int, int> offset);
-
-pair<int, int> offset(const Mat &img1, const Mat &img2, set<Point2f> &hist, const int method);
-
+void display(const char *name, Mat img);
+Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset);
+Point2i offset(const Mat &img1, const Mat &img2, set<Point2f> &hist, const int method);
 void closure(const vector<Point2f> &pts, Point2f &ul, Point2f &lr);
 Mat homography(const Mat &img1, const Mat &img2);
-Mat calibration(const Mat &img1, const Mat &img2);
-pair<int, int> homoMatching(const Mat &img1, const Mat &img2);
+Mat relugarization(const Mat &img1, const Mat &img2);
+Point2i homoMatching(const Mat &img1, const Mat &img2);
 
-pair<int, int> entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist, const float minPortionH = 0.f,
+Point2i entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist, const float minPortionH = 0.f,
                                    const float minPortionV = 0.f);
 void entirePatchMatchingTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, set<Point2f> &hist,
                             const float minPortionH = 0.f, const float minPortionV = 0.f);

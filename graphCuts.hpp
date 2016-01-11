@@ -14,5 +14,5 @@ void correspondance(const Point2i& pt, Point2i& pt1, Point2i& pt2, const Point2i
 
 void graphCut(Mat& output, const Mat& img1, const Mat& img2, const Point2i& offset);
 
-Mat synthesis(const Mat& img1, const Mat& img2, const Point2i& offset);
+Mat showGraphCut(const Mat &img1, const Mat &img2, const Point2i &offset);
 
