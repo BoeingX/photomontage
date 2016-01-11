@@ -44,16 +44,18 @@ void testGCuts()
 }
 
 // calculate intensity of gradients Ix, Iy and G of image I, containing all channels;
-void gradient(const Mat& I, Mat& grad_x, Mat& grad_y, Mat& grad){
+void forTest(const Mat& I, Mat& grad_x, Mat& grad_y){
 	Mat tmp;
 	Sobel(I, grad_x, CV_64F, 1, 0, 3, 1, 0, BORDER_DEFAULT);
 	Sobel(I, grad_y, CV_64F, 0, 1, 3, 1, 0, BORDER_DEFAULT);
-	tmp = grad_x - grad_y;
-	tmp = tmp.mul(tmp);
-	sqrt(tmp, grad);
 	convertScaleAbs(grad_x, grad_x);	//Scales, calculates absolute values, and converts the result to 8-bit;
 	convertScaleAbs(grad_y, grad_y);	//Scales, calculates absolute values, and converts the result to 8-bit;
-	convertScaleAbs(grad, grad);	//Scales, calculates absolute values, and converts the result to 8-bit;
+}
+
+void gradient(const Mat& I, Mat& grad_x, Mat& grad_y){
+	Mat tmp;
+	Sobel(I, grad_x, CV_64F, 1, 0, 3, 1, 0, BORDER_DEFAULT);
+	Sobel(I, grad_y, CV_64F, 0, 1, 3, 1, 0, BORDER_DEFAULT);
 }
 
 /*
@@ -195,21 +197,29 @@ void graphCut(Mat& output, const Mat& img1, const Mat& img2, const Point2i& offs
 				correspondance(Point2i(j, i), pt1, pt2, offset, img1, img2);
 				
 				// if adjacent to img1 or img2, set cost to be infinity;
-				if (i == upperLeft.y){
+				if (j == upperLeft.x){
 					g.add_tweights(j-upperLeft.x + cols*(i-upperLeft.y), infinity, 0);
 				}
-				if (i == lowerRight.y){
+				if (j == lowerRight.x){
 					g.add_tweights(j - upperLeft.x + cols*(i - upperLeft.y), 0, infinity);
 				}
-				
+
+				if (i==upperLeft.y && (j>upperLeft.x && j < lowerRight.x)){
+					g.add_tweights(j - upperLeft.x + cols*(i - upperLeft.y), infinity, 0);
+				}
+				if (i == lowerRight.y && (j>upperLeft.x && j < lowerRight.x)){
+					g.add_tweights(j - upperLeft.x + cols*(i - upperLeft.y), 0, infinity);
+				}
 				// set cost between nodes other than source or sink;
 				double cost=0;
 				if (j < lowerRight.x){
 					cost = matchingCost(pt1, pt1 + Point2i(1, 0), pt2, pt2 + Point2i(1, 0), img1, img2);
+					//cost = cost / (norm(grad_x1.at<double>(pt1)) + norm(grad_x1.at<double>(pt1 + Point2i(1, 0))) + norm(grad_x2.at<double>(pt2)) + norm(grad_x2.at<double>(pt2 + Point2i(1, 0))));
 					g.add_edge(j-upperLeft.x + (i-upperLeft.y)*cols, j-upperLeft.x + 1 + (i-upperLeft.y)*cols, cost, cost);
 				}
 				if (i < lowerRight.y){
 					cost = matchingCost(pt1, pt1 + Point2i(0, 1), pt2, pt2 + Point2i(0, 1), img1, img2);
+					//cost = cost / (norm(grad_y1.at<double>(pt1)) + norm(grad_y1.at<double>(pt1 + Point2i(0, 1))) + norm(grad_y2.at<double>(pt2)) + norm(grad_y2.at<double>(pt2 + Point2i(0, 1))));
 					g.add_edge(j-upperLeft.x + (i-upperLeft.y)*cols, j-upperLeft.x + (i-upperLeft.y + 1)*cols, cost, cost);
 				}
 				
@@ -245,15 +255,24 @@ void graphCut(Mat& output, const Mat& img1, const Mat& img2, const Point2i& offs
 			for (int j = upperLeft.x; j <= lowerRight.x; j++){
 
 				correspondance(Point2i(j, i), pt1, pt2, offset, img1, img2);
-
+				
 				// if adjacent to img1 or img2, set cost to be infinity;
-				if (i == upperLeft.y){
+				if (j == upperLeft.x){
 					g.add_tweights(j - upperLeft.x + cols*(i - upperLeft.y), infinity, 0);
 				}
-				if (i == lowerRight.y){
+				
+				if (j == lowerRight.x){
 					g.add_tweights(j - upperLeft.x + cols*(i - upperLeft.y), 0, infinity);
 				}
-
+				
+				if (i == upperLeft.y && (j>upperLeft.x && j < lowerRight.x)){
+					g.add_tweights(j - upperLeft.x + cols*(i - upperLeft.y), 0, infinity);
+				}
+				
+				if (i == lowerRight.y && (j>upperLeft.x && j < lowerRight.x)){
+					g.add_tweights(j - upperLeft.x + cols*(i - upperLeft.y), infinity, 0);
+				}
+				
 				// set cost between nodes other than source or sink;
 				double cost = 0;
 				if (j < lowerRight.x){
@@ -279,6 +298,7 @@ void graphCut(Mat& output, const Mat& img1, const Mat& img2, const Point2i& offs
 				}
 			}
 		}
+		
 	}
 	
 }
@@ -288,40 +308,40 @@ Mat synthesis(const Mat& img1, const Mat& img2, const Point2i& offset){
 	Mat output;
 	/*
 	if (offset.y>=0){
-		output = Mat::zeros(offset.y + img2.rows, img2.cols + offset.x, CV_8UC3);
-		for (int i = 0; i < img1.rows; i++){
-			for (int j = 0; j < img1.cols; j++){
-				output.at<Vec3b>(i, j) = img1.at<Vec3b>(i, j);
-			}
-		}
-		for (int i = offset.y; i < offset.y+img2.rows; i++){
-			for (int j = offset.x; j < offset.x+img2.cols; j++){
-				output.at<Vec3b>(i, j) = img2.at<Vec3b>(i-offset.y, j-offset.x);
-			}
-		}
+	output = Mat::zeros(offset.y + img2.rows, img2.cols + offset.x, CV_8UC3);
+	for (int i = 0; i < img1.rows; i++){
+	for (int j = 0; j < img1.cols; j++){
+	output.at<Vec3b>(i, j) = img1.at<Vec3b>(i, j);
+	}
+	}
+	for (int i = offset.y; i < offset.y+img2.rows; i++){
+	for (int j = offset.x; j < offset.x+img2.cols; j++){
+	output.at<Vec3b>(i, j) = img2.at<Vec3b>(i-offset.y, j-offset.x);
+	}
+	}
 	}
 	else{
-		output = Mat::zeros(-1 * offset.y + img1.rows, img2.cols + offset.x, CV_8UC3);
-		for (int i = -offset.y; i < -offset.y+img1.rows; i++){
-			for (int j = 0; j < img1.cols; j++){
-				output.at<Vec3b>(i, j) = img1.at<Vec3b>(i+offset.y, j);
-			}
-		}
-		for (int i = 0; i < img2.rows; i++){
-			for (int j = offset.x; j < offset.x + img2.cols; j++){
-				output.at<Vec3b>(i, j) = img2.at<Vec3b>(i, j - offset.x);
-			}
-		}
+	output = Mat::zeros(-1 * offset.y + img1.rows, img2.cols + offset.x, CV_8UC3);
+	for (int i = -offset.y; i < -offset.y+img1.rows; i++){
+	for (int j = 0; j < img1.cols; j++){
+	output.at<Vec3b>(i, j) = img1.at<Vec3b>(i+offset.y, j);
+	}
+	}
+	for (int i = 0; i < img2.rows; i++){
+	for (int j = offset.x; j < offset.x + img2.cols; j++){
+	output.at<Vec3b>(i, j) = img2.at<Vec3b>(i, j - offset.x);
+	}
+	}
 	}*/
-	if(offset.x > 0){
-		if(offset.y < 0){
+	if (offset.x > 0){
+		if (offset.y < 0){
 			int height = abs(offset.y) + img1.rows > img2.rows ? abs(offset.y) + img1.rows : img2.rows;
 			int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
 			output = Mat::zeros(height, width, CV_8UC(img1.channels()));
 			img1.copyTo(output(Rect(0, -offset.y, img1.cols, img1.rows)));
 			img2.copyTo(output(Rect(offset.x, 0, img2.cols, img2.rows)));
 		}
-		else if(offset.y > 0){
+		else if (offset.y > 0){
 			int height = abs(offset.y) + img2.rows > img1.rows ? abs(offset.y) + img2.rows : img1.rows;
 			int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
 			output = Mat::zeros(height, width, CV_8UC(img1.channels()));
@@ -333,16 +353,15 @@ Mat synthesis(const Mat& img1, const Mat& img2, const Point2i& offset){
 	return output;
 }
 
-/*
 int main() {
 	//testGCuts();
-	Mat img1, img2, grad, gi, ge;
+	Mat img1, img2;
 	Mat I=imread("../fishes.jpg"); //CV_8UC3;
 	//setMouseCallback("I", onMouse1, &I);
-	gradient(I, img1, img2, grad);
+	forTest(I, img1, img2);
 	imshow("I1", img1); 
 	imshow("I2", img2);
-	Point2i offset(30, -30);
+	Point2i offset(70, -70);
 	//Point2i pt1, pt2;
 	//correspondance(Point2i(90, 90), pt1, pt2, offset, img1, img2);
 	//cout << pt1 << endl; cout << pt2 << endl;
@@ -351,4 +370,3 @@ int main() {
 	waitKey();
 	return 0;
 }
-*/
