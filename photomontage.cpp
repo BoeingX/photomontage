@@ -2,6 +2,7 @@
 #include <cmath>
 #include <limits>
 #include <cstdlib>
+#include <algorithm>
 #define SIGGRAPH 0
 #define PANORAMA 1
 #define MIN_OVERLAP 0.1
@@ -38,6 +39,17 @@ void closure(const vector<Point2f> &pts, Point2f &ul, Point2f &lr){
     lr = Point2f(maxX, maxY);
 }
 
+void inscribe(const vector<Point2f> &pts, Point2f &ul, Point2f &lr){
+    vector<float> xs(4), ys(4);
+    for(int i = 0; i < 4; i++){
+        xs[i] = pts[i].x;
+        ys[i] = pts[i].y;
+    }
+    sort(xs.begin(), xs.end());
+    sort(ys.begin(), ys.end());
+    ul = Point2f(xs[1], ys[1]);
+    lr = Point2f(xs[2], ys[2]);
+}
 
 Mat homography(const Mat &img1, const Mat &img2){
 
@@ -140,14 +152,18 @@ Point2i homoMatching(const Mat &img1, const Mat &img2, Mat &img2Regu){
     Mat M;
     M = (Mat_<float>(3, 3) << 1, 0, -ul.x, 0, 1, -ul.y, 0, 0, 1);
     Mat M_ = M * H_inv;
-    warpPerspective(img2, img2Regu, M_, Size(lr.x - ul.x, lr.y - ul.y));
-    return Point2i(ul.x, ul.y);
+    Mat tmp;
+    warpPerspective(img2, tmp, M_, Size(lr.x - ul.x, lr.y - ul.y));
+    Point2f ul2, lr2;
+    inscribe(dst, ul2, lr2);
+    img2Regu = tmp(Rect(ul2.x - ul.x, ul2.y - ul.y, lr2.x - ul2.x, lr2.y - ul2.y));
+    return Point2i(ul2.x, ul2.y);
 }
 
 
 Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset){
     Mat tmp1, tmp2;
-    if(offset.x > 0){
+    if(offset.x >= 0){
         if(offset.y < 0){
             int height = abs(offset.y) + img1.rows > img2.rows ? abs(offset.y) + img1.rows : img2.rows;
             int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
@@ -156,7 +172,7 @@ Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset){
             tmp2 = Mat::zeros(height, width, CV_8UC(img1.channels()));
             img2.copyTo(tmp2(Rect(offset.x, 0, img2.cols, img2.rows)));
         }
-        else if(offset.y > 0){
+        else if(offset.y >= 0){
             int height = abs(offset.y) + img2.rows > img1.rows ? abs(offset.y) + img2.rows : img1.rows;
             int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
             tmp1 = Mat::zeros(height, width, CV_8UC(img1.channels()));

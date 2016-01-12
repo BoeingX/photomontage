@@ -55,7 +55,8 @@ int panorama(int argc, char **argv){
         Mat inputRegu;
         Point2i p = homoMatching(output, input, inputRegu);
         //display("regulizaed", inputRegu);
-        output = showNaive(output, inputRegu, p);
+        cout<<p<<endl;
+        output = showGraphCut(output, inputRegu, p);
         inputRegu.release();
     }
     display("output", output);
@@ -63,7 +64,7 @@ int panorama(int argc, char **argv){
 }
 
 int main(int argc, char **argv){
-    panorama_(argc, argv);
+    panorama(argc, argv);
     /*Mat img1 = imread(argv[1]);
     Mat img2 = imread(argv[2]);
     namedWindow( "img1", WINDOW_NORMAL);

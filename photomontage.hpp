@@ -14,6 +14,7 @@ using namespace cv;
 void display(const char *name, Mat img, int showTime = 0);
 Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset);
 void closure(const vector<Point2f> &pts, Point2f &ul, Point2f &lr);
+void inscribe(const vector<Point2f> &pts, Point2f &ul, Point2f &lr);
 Mat homography(const Mat &img1, const Mat &img2);
 Point2i homoMatching(const Mat &img1, const Mat &img2, Mat &img2Regu);
 
