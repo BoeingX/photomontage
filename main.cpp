@@ -31,22 +31,23 @@ int panorama_(int argc, char **argv){
     }
     Mat output = panorama_(argc, argv, 1, argc);
     display("output", output);
-    imwrite("output.jpg", output);
+    //imwrite("output.jpg", output);
     output.release();
+    return EXIT_SUCCESS;
 }
 int panorama(int argc, char **argv){
     if(argc < 2){
         cout<<"Usage: ./main img1 img2 ..."<<endl;
         return EXIT_FAILURE;
     }
-    Mat output = imread(argv[1]);
+    Mat output = imread(argv[1], CV_LOAD_IMAGE_COLOR);
     if(output.empty()){
         cout<<"ERROR: could not open "<<argv[1]<<endl;
         return EXIT_FAILURE;
     }
     display(argv[1], output);
     for(int i = 2; i < argc; i++){
-        Mat input = imread(argv[i]);
+        Mat input = imread(argv[i], CV_LOAD_IMAGE_COLOR);
         if(input.empty()){
             cout<<"ERROR: could not open "<<argv[i]<<endl;
             break;
@@ -54,17 +55,29 @@ int panorama(int argc, char **argv){
         display(argv[i], input);
         Mat inputRegu;
         Point2i p = homoMatching(output, input, inputRegu);
-        //display("regulizaed", inputRegu);
         cout<<p<<endl;
-        output = showGraphCut(output, inputRegu, p);
-        inputRegu.release();
+        output = showNaive(output, inputRegu, p);
+        input.release();
+        /*
+        vector<Point2i> hist;
+        Point2i p = entirePatchMatching(output, input, hist);
+        cout<<p<<endl;
+        output = showNaive(output, input, p);
+        input.release();
+        */
     }
     display("output", output);
     imwrite("output.jpg", output);
+    return EXIT_SUCCESS;
 }
+
+
 
 int main(int argc, char **argv){
     panorama(argc, argv);
+    //Mat t1 = Mat::ones(4, 4, CV_8UC3);
+    //Mat t2 = Mat::ones(4, 4, CV_8UC3);
+    //montage(t1, t2);
     /*Mat img1 = imread(argv[1]);
     Mat img2 = imread(argv[2]);
     namedWindow( "img1", WINDOW_NORMAL);

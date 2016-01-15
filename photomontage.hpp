@@ -5,7 +5,6 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/opencv.hpp>
 #include <vector>
-#include <set>
 #define SIGGRAPH 0
 #define PANORAMA 1
 using namespace std;
@@ -18,5 +17,8 @@ void inscribe(const vector<Point2f> &pts, Point2f &ul, Point2f &lr);
 Mat homography(const Mat &img1, const Mat &img2);
 Point2i homoMatching(const Mat &img1, const Mat &img2, Mat &img2Regu);
 
-Point2i entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist);
-void entirePatchMatchingTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, set<Point2f> &hist);
+Point2i entirePatchMatching(const Mat &img1, const Mat &img2, vector<Point2i> &hist);
+
+void entirePatchMatchingTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, const vector<Point2i> &hist);
+
+Mat montage(Mat &output, const Mat &input);

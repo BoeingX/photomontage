@@ -161,31 +161,41 @@ Point2i homoMatching(const Mat &img1, const Mat &img2, Mat &img2Regu){
 }
 
 
-Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset){
+Mat showNaivePositive(const Mat &img1, const Mat &img2, const Point2i offset){
     Mat tmp1, tmp2;
-    if(offset.x >= 0){
-        if(offset.y < 0){
-            int height = abs(offset.y) + img1.rows > img2.rows ? abs(offset.y) + img1.rows : img2.rows;
-            int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
-            tmp1 = Mat::zeros(height, width, CV_8UC(img1.channels()));
-            img1.copyTo(tmp1(Rect(0, -offset.y, img1.cols, img1.rows)));
-            tmp2 = Mat::zeros(height, width, CV_8UC(img1.channels()));
-            img2.copyTo(tmp2(Rect(offset.x, 0, img2.cols, img2.rows)));
-        }
-        else if(offset.y >= 0){
-            int height = abs(offset.y) + img2.rows > img1.rows ? abs(offset.y) + img2.rows : img1.rows;
-            int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
-            tmp1 = Mat::zeros(height, width, CV_8UC(img1.channels()));
-            img1.copyTo(tmp1(Rect(0, 0, img1.cols, img1.rows)));
-            tmp2 = Mat::zeros(height, width, CV_8UC(img1.channels()));
-            img2.copyTo(tmp2(Rect(offset.x, offset.y, img2.cols, img2.rows)));
-        }
+    if(offset.y < 0){
+        int height = abs(offset.y) + img1.rows > img2.rows ? abs(offset.y) + img1.rows : img2.rows;
+        int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
+        tmp1 = Mat::zeros(height, width, CV_8UC(img1.channels()));
+        img1.copyTo(tmp1(Rect(0, -offset.y, img1.cols, img1.rows)));
+        tmp2 = Mat::zeros(height, width, CV_8UC(img1.channels()));
+        img2.copyTo(tmp2(Rect(offset.x, 0, img2.cols, img2.rows)));
+    }
+    else{
+        int height = abs(offset.y) + img2.rows > img1.rows ? abs(offset.y) + img2.rows : img1.rows;
+        int width = abs(offset.x) + img2.cols > img1.cols ? abs(offset.x) + img2.cols : img1.cols;
+        tmp1 = Mat::zeros(height, width, CV_8UC(img1.channels()));
+        img1.copyTo(tmp1(Rect(0, 0, img1.cols, img1.rows)));
+        tmp2 = Mat::zeros(height, width, CV_8UC(img1.channels()));
+        img2.copyTo(tmp2(Rect(offset.x, offset.y, img2.cols, img2.rows)));
     }
     Mat output = tmp1 + (tmp2 - tmp1);
     return output;
 }
 
-Point2i entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist){
+Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset){
+    if(offset.x >= 0)
+        return showNaivePositive(img1, img2, offset);
+    Mat img1Flip, img2Flip;
+    flip(img1, img1Flip, 1);
+    flip(img2, img2Flip, 1);
+    Point2i offsetFlip = Point2i(-offset.x, offset.y);
+    Mat outputFlip = showNaivePositive(img1Flip, img2Flip, offsetFlip);
+    Mat output;
+    flip(outputFlip, output, 1);
+    return output;
+}
+Point2i entirePatchMatching(const Mat &img1, const Mat &img2, vector<Point2i> &hist){
     int xOpt, yOpt, x, y;
     double scoreOpt, score;
     scoreOpt = numeric_limits<double>::max();
@@ -215,14 +225,15 @@ Point2i entirePatchMatching(const Mat &img1, const Mat &img2, set<Point2f> &hist
     //! case 4
     entirePatchMatchingTry(img2Flip, img1Flip, x, y, score, hist);
     if(score < scoreOpt){
-       xOpt = x;
-       yOpt = -y;
+        xOpt = x;
+        yOpt = -y;
     }
-    
+
+    hist.push_back(Point2i(xOpt, yOpt));
     return Point2i(xOpt, yOpt);
 }
 
-void entirePatchMatchingTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, set<Point2f> &hist){
+void entirePatchMatchingTry(const Mat &img1, const Mat &img2, int &x, int &y, double &score, const vector<Point2i> &hist){
     Mat img1Gray, img2Gray;
     cvtColor(img1, img1Gray, CV_BGR2GRAY);
     cvtColor(img2, img2Gray, CV_BGR2GRAY);
@@ -248,11 +259,20 @@ void entirePatchMatchingTry(const Mat &img1, const Mat &img2, int &x, int &y, do
             double B = img2Sum2.at<double>(s, t) - img2Sum2.at<double>(0, t) - img2Sum2.at<double>(s, 0) + img2Sum2.at<double>(0, 0);
             double C = A + B - 2.0 * correlation.at<double>(i, j);
             C /= (img1.rows - i)*(img1.cols - j);
-            if(C < score){
+            if(C < score && find(hist.begin(), hist.end(), Point2i(j, i)) == hist.end()){
                 x = j;
                 y = i;
                 score = C;
             }
         }
+    }
+}
+
+Mat montage(Mat &output, const Mat &input){
+    vector<Point2i> hist;
+    Mat status = Mat::zeros(output.rows, output.cols, CV_8UC1);
+
+    for(int i = 0; i < 1; i++){
+
     }
 }
