@@ -179,7 +179,10 @@ void graphCut(Mat& output, const Mat& img1, const Mat& img2, const Point2i& offs
 // synthesize images using graph cuts;
 Mat showGraphCut(const Mat &img1, const Mat &img2, const Point2i &offset){
 	Mat output = showNaive(img1, img2, offset);
-	graphCut(output, img1, img2, offset);
+    if(offset.x < 0)
+	    graphCut(output, img2, img1, Point2i(-offset.x, -offset.y));
+    else
+	    graphCut(output, img1, img2, offset);
 	return output;
 }
 

@@ -53,18 +53,18 @@ int panorama(int argc, char **argv){
             break;
         }
         display(argv[i], input);
+        /*
         Mat inputRegu;
         Point2i p = homoMatching(output, input, inputRegu);
         cout<<p<<endl;
         output = showNaive(output, inputRegu, p);
         input.release();
-        /*
+        */
         vector<Point2i> hist;
         Point2i p = entirePatchMatching(output, input, hist);
         cout<<p<<endl;
-        output = showNaive(output, input, p);
+        output = showGraphCut(output, input, p);
         input.release();
-        */
     }
     display("output", output);
     imwrite("output.jpg", output);

@@ -186,15 +186,9 @@ Mat showNaivePositive(const Mat &img1, const Mat &img2, const Point2i offset){
 Mat showNaive(const Mat &img1, const Mat &img2, const Point2i offset){
     if(offset.x >= 0)
         return showNaivePositive(img1, img2, offset);
-    Mat img1Flip, img2Flip;
-    flip(img1, img1Flip, 1);
-    flip(img2, img2Flip, 1);
-    Point2i offsetFlip = Point2i(-offset.x, offset.y);
-    Mat outputFlip = showNaivePositive(img1Flip, img2Flip, offsetFlip);
-    Mat output;
-    flip(outputFlip, output, 1);
-    return output;
+    return showNaivePositive(img2, img1, Point2i(-offset.x, -offset.y));
 }
+
 Point2i entirePatchMatching(const Mat &img1, const Mat &img2, vector<Point2i> &hist){
     int xOpt, yOpt, x, y;
     double scoreOpt, score;
