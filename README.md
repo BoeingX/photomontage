@@ -1,6 +1,7 @@
-# Seamless Image Stitching
+[![Build Status](https://travis-ci.org/BoeingX/photomontage.svg?branch=master)](https://travis-ci.org/BoeingX/photomontage)
 
-Seamless image stitching by graph cut method, partially adapted from paper [Graphcut Textures: Image and Video Synthesis Using Graph Cut](http://www.cc.gatech.edu/cpl/projects/graphcuttextures/gc-final-lowres.pdf). 
+Seamless image stitching by graph cut method,
+partially adapted from paper [Graphcut Textures: Image and Video Synthesis Using Graph Cut](http://www.cc.gatech.edu/cpl/projects/graphcuttextures/gc-final-lowres.pdf). 
 
 # Dependencies
 
